@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: ris_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword  # 設定你 root 的密碼
+      TZ: Asia/Taipei
+    ports:
+      - "3306:3306"
+    volumes:
+      #  關鍵點：把當前資料夾的 init.sql 掛載到容器的初始化資料夾中
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      # 保持資料持久化，避免容器重啟後資料消失
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:

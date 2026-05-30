@@ -1,0 +1,54 @@
+version: "3.8"
+
+services:
+  loki:
+    image: grafana/loki:2.9.2
+    container_name: loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - monitor-net
+    restart: unless-stopped
+    volumes:
+      - loki-data:/loki # 【新增】將 Loki 儲存的日誌資料持久化
+
+  promtail:
+    image: grafana/promtail:2.9.2
+    container_name: promtail
+    volumes:
+      - "../試題 1:/var/log/task1:ro"
+      - "../試題 2:/var/log/task2:ro"
+      - "./promtail-config.yaml:/etc/promtail/config.yml:ro"
+      - promtail-data:/tmp # 【新增】將 Promtail 的讀取進度書籤持久化
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - monitor-net
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - monitor-net
+    depends_on:
+      - loki
+    restart: unless-stopped
+    volumes:
+      - grafana-data:/var/lib/grafana # 【新增】將 Grafana 的設定、密碼、警報規則持久化
+
+networks:
+  monitor-net:
+    driver: bridge
+
+# 【新增】宣告三個專屬的命名資料卷，交由 Docker 底層安全管理
+volumes:
+  grafana-data:
+  loki-data:
+  promtail-data:
